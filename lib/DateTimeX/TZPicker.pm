@@ -57,12 +57,42 @@ sub _build_zone_lookup {
       int($offset % 3600 / 60);
 
     $zone{ $tz->name } = {
-      name   => "($offset_str) " . $tz->name,
-      offset => $offset,
+      name         => $tz->name,
+      offset_str   => $offset_str,
+      offset       => $offset,
     };
   }
 
   return \%zone;
+}
+
+# Eastern Time => America/New_York
+has country_overrides => (
+  is  => 'ro',
+  isa => 'HashRef[ HashRef ]',
+  default => sub {  {}  },
+  traits  => [ 'Hash' ],
+  handles => {
+    country_override_for => 'get',
+  },
+);
+
+sub zones_for_country {
+  my ($self, $cc) = @_;
+  $cc = lc $cc;
+
+  my %zone;
+
+  if (my $override = $self->country_override_for($cc)) {
+    %zone = %$override;
+  } else {
+    my $zfc = $self->_zones_for_country->{ $cc };
+    %zone  = map { $_ => $_ } @$zfc;
+  }
+
+  return
+    map {; +{ %{ $self->_zone_lookup->{ $zone{$_} } }, display_name => $_ } }
+    keys %zone;
 }
 
 has _zones_for_country => (
@@ -131,4 +161,5 @@ sub BUILD {
   $self->_all_zones;
 }
 
+__PACKAGE__->meta->make_immutable;
 1;
