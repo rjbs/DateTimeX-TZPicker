@@ -135,10 +135,11 @@ sub _build_zones_for_country {
 }
 
 has all_zones => (
-  is   => 'ro',
   isa  => 'ArrayRef',
   lazy => 1,
   init_arg => undef,
+  traits   => [ 'Array' ],
+  handles  => { all_zones => 'elements' },
   default  => sub {
     my ($self) = @_;
 
