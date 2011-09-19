@@ -1,5 +1,6 @@
 package DateTimeX::TZPicker;
 use Moose;
+# ABSTRACT: a helper for picking time zones
 
 use namespace::autoclean;
 
