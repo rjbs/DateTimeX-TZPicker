@@ -18,7 +18,9 @@ has _countries => (
   init_arg => undef,
   traits   => [ 'Hash' ],
   handles  => {
-    _country_names => 'keys',
+    knows_country    => 'exists',
+    name_for_country => 'get',
+    known_countries  => 'keys',
   },
   default  => sub {
     my ($self) = @_;
@@ -121,7 +123,7 @@ sub _build_zones_for_country {
   my $zone = $self->_zone_lookup;
 
   my %zones_for_country;
-  for my $country ($self->_country_names) {
+  for my $country ($self->known_countries) {
     $zones_for_country{$country} = [
       sort { $zone->{$a}{name} cmp $zone->{$b}{name} }
       grep {; exists $zone->{$_} }
@@ -132,7 +134,7 @@ sub _build_zones_for_country {
   return \%zones_for_country;
 }
 
-has _all_zones => (
+has all_zones => (
   is   => 'ro',
   isa  => 'ArrayRef',
   lazy => 1,
@@ -141,7 +143,15 @@ has _all_zones => (
     my ($self) = @_;
 
     my $zone = $self->_zone_lookup;
-    return [ sort { $zone->{$a}{name} cmp $zone->{$b}{name} } keys %$zone ];
+
+    my @zones =
+      sort { $a->offset <=> $b->offset || $a->real_name cmp $b->real_name }
+      map  {; DateTimeX::TZPicker::TZ->_new({
+        %{ $self->_zone_lookup->{ $_ } }
+      }) }
+      keys %$zone;
+
+    return \@zones;
   },
 );
 
@@ -169,7 +179,7 @@ sub BUILD {
   my ($self) = @_;
   $self->_zone_lookup;
   $self->_zones_for_country;
-  $self->_all_zones;
+  $self->all_zones;
 }
 
 {
