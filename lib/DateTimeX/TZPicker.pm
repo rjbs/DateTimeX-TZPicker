@@ -122,13 +122,24 @@ sub _build_zones_for_country {
   my ($self) = @_;
 
   my $zone = $self->_zone_lookup;
+  my $links = DateTime::TimeZone->links;
 
   my %zones_for_country;
   for my $country ($self->known_countries) {
+    my @names_in_country = DateTime::TimeZone->names_in_country($country);
+
+    for my $i (0 .. $#names_in_country) {
+      my $name = $names_in_country[$i];
+
+      if (exists $links->{$name}) {
+        $names_in_country[$i] = $links->{$name};
+      }
+    }
+
     $zones_for_country{$country} = [
       sort { $zone->{$a}{name} cmp $zone->{$b}{name} }
       grep {; exists $zone->{$_} }
-      DateTime::TimeZone->names_in_country($country)
+      @names_in_country
     ];
   }
 
